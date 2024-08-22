@@ -3,30 +3,26 @@
 # ref.: https://gpsd.gitlab.io/gpsd/NMEA.html
 
 import serial
-import threading
+# import threading
 import os           # for clear screan only
 
 # Data structure in class format
 class GNSS_GGA: # GGA - Global Positioning System Fix Data - Time, Position and fix related data for a GPS receiver.
     def __init__(self):
-        self.hour = 0           # Field 1 - UTC of this position report, hh is hours, mm is minutes, ss.ss is seconds.
+        self.hour = 7           # Field 1 - UTC of this position report, hh is hours, mm is minutes, ss.ss is seconds.
         self.min = 0
         self.sec = 0
         self.utc_time = 0
         
-        self.latitude = 0       # Field 2 - Latitude, dd is degrees, mm.mm is minutes
-        self.latdeg_dec = 0.0
-        self.latdeg = 0
-        self.latmin = 0.0
-        self.latsec = 0.0
-        self.lat_index = '_ '   # Field 3 - N or S (North or South)
+        self.lat_dec = 0.0       # Field 2 - Latitude, dd is degrees, mm.mm is minutes
+        self.lat_deg = 0.0
+        self.lat_min = 0.0
+        self.lat_i = '_'    # Field 3 - N or S (North or South)
         
-        self.longitude = 0      # Field 4 - Longitude, dd is degrees, mm.mm is minutes 
-        self.londeg_dec = 0.0
-        self.londeg = 0
-        self.lonmin = 0.0
-        self.lonsec = 0.0
-        self.lon_index = '_'    # Field 5 - E or W (East or West)
+        self.lon_dec = 0.0      # Field 4 - Longitude, dd is degrees, mm.mm is minutes 
+        self.lon_deg = 0.0
+        self.lon_min = 0.0
+        self.lon_i = '_'    # Field 5 - E or W (East or West)
 
         self.quality = 0        # Field 6 - GPS Quality Indicator (non null)
                                     # 0 - fix not available,
@@ -46,35 +42,35 @@ class GNSS_GGA: # GGA - Global Positioning System Fix Data - Time, Position and 
         self.units_gs = 0
         self.age_of_correction = 0 
         self.checksum = 0
+    def decode(self, str_cmd):
+        if str_cmd[2] != "":
+            self.hour = int(str_cmd[1][0:2])
+            self.min = int(str_cmd[1][2:4])
+            self.sec = int(str_cmd[1][4:6])
 
-        def decode(str_cmd):
-            case "GGA":	# Time, position, fix type data.
-            if str_cmd[2] != "":
-            gpsd0.hour = int(str_cmd[1][0:2])
-            gpsd0.min = int(str_cmd[1][2:4])
-            gpsd0.sec = int(str_cmd[1][4:6])
-            gpsd0.latdeg = float(str_cmd[2][:2])
-            gpsd0.latdeg_dec = gpsd0.latdeg + float(str_cmd[2][2:])/60
+            self.lat_deg = float(str_cmd[2][:2])
+            self.lat_dec = self.lat_deg + float(str_cmd[2][2:])/60
+            self.lat_i = str_cmd[3]
 
-            # gpsd0.latmin = str_cmd[2][2:4]
-            # gpsd0.latsec = str_cmd[2][5:]*60
-            # gpsd0.latitude = float(str_cmd[2])/100
-            gpsd0.lat_index = str_cmd[3]
+        # gpsd0.latmin = str_cmd[2][2:4]
+        # gpsd0.latsec = str_cmd[2][5:]*60
+        # gpsd0.latitude = float(str_cmd[2])/100
+    
 
-            # gpsd0.longitude = float(str_cmd[4])/100
-            gpsd0.londeg = float(str_cmd[4][:3])
-            gpsd0.londeg_dec = gpsd0.londeg + float(str_cmd[4][3:])/60
-            gpsd0.lon_index = str_cmd[5]
-            gpsd0.quality = int(str_cmd[6])
-            gpsd0.num_satt = int(str_cmd[7])
-            gpsd0.hdop = float(str_cmd[8])
-            gpsd0.altitude = str_cmd[9]
-            gpsd0.units_pos = str_cmd[10]
-            gpsd0.geoidal_separation = str_cmd[11]
-            gpsd0.units_gs = str_cmd[12]
-            gpsd0.age_of_correction = str_cmd[13]
-            # correction_station_ID = str_cmd[14]
-            gpsd0.checksum = str_cmd[14][2:]
+            self.lon_deg = float(str_cmd[4][:3])
+            # self.lon_deg = float(str_cmd[4])/100
+            self.lon_dec = self.lon_deg + float(str_cmd[4][3:])/60
+            self.lon_i = str_cmd[5]
+        # gpsd0.quality = int(str_cmd[6])
+        # gpsd0.num_satt = int(str_cmd[7])
+        # gpsd0.hdop = float(str_cmd[8])
+        # gpsd0.altitude = str_cmd[9]
+        # gpsd0.units_pos = str_cmd[10]
+        # gpsd0.geoidal_separation = str_cmd[11]
+        # gpsd0.units_gs = str_cmd[12]
+        # gpsd0.age_of_correction = str_cmd[13]
+        # # correction_station_ID = str_cmd[14]
+        # gpsd0.checksum = str_cmd[14][2:]
 class GNSS_GSA: # GSA - GPS DOP and active satellites
     def __init__(self):
         self.sel_mode = "_"         # Field 1 - Selection mode: M=Manual, forced to operate in 2D or 3D, A=Automatic, 2D/3D
@@ -92,21 +88,21 @@ class GNSS_GSA: # GSA - GPS DOP and active satellites
                                         # 4 = BeiDou B1I D1, B1I D2, B2I D1, B2I D12
         self.num_used = 0
         self.num_visible = 0
-    
-    def decode(str_cmd):
-        gpsd0.s_mode = int(ans2[2])
-        sys_id = int(ans2[18][:1])         # Constellation type.
-        satt_id_group = []
-        satt_id_group_num = 0
-        for x in range(3,15):
-        try:
-        satt_id_group.append(int(ans2[x]))
-        satt_id_group_num += 1
-        # gpsd0.satt_id[gpsd0.sys_id - 1][x-3] = int(ans2[x])
-        except:
-        satt_id_group.append(0)                        # gpsd0.satt_id[gpsd0.sys_id - 1][x-3] = 0
 
-        gpsd0.satt_id[sys_id-1] = satt_id_group
+    def decode(self, str_cmd):
+        self.sys_id = int(str_cmd[18][:1])      # Constellation system id
+        self.sel_mode = str_cmd[1]
+        self.mode = int(str_cmd[2])
+        self.satt_id_group_num = 0
+        for x in range(0,12):
+            try:
+                self.satt_id_group[x] = int(str_cmd[x+3])
+                self.satt_id_group_num += 1
+                # gpsd0.satt_id[gpsd0.sys_id - 1][x-3] = int(ans2[x])
+            except:
+                self.satt_id_group[x] = 0                        # gpsd0.satt_id[gpsd0.sys_id - 1][x-3] = 0
+
+        # self.satt_id[self.sys_id-1] = self.satt_id_group
 class GNSS_RMC: # RMC - Recommended Minimum Navigation Information
     def __init__(self):
         self.utc_hour = 0           # Field 1 - UTC of position fix, hh is hours, mm is minutes, ss.ss is seconds.
@@ -173,11 +169,14 @@ class GNSS_GLL: # GLL - Geographic Position - Latitude/Longitude
         self.status = 'V'   # Field 6 - Status A - Data Valid, V - Data Invalid
         self.mode = 0       # Field 7 - FAA mode indicator (NMEA 2.3 and later) ??
         self.checksum = 0   # Field 8 - checksum
+
 class GPSD:
     def __init__(self):
         self.gga = GNSS_GGA()
-        self.gsa = GNSS_GSA()
+        self.gsa = [GNSS_GSA(), GNSS_GSA(), GNSS_GSA(), GNSS_GSA(), GNSS_GSA()]
+        # self.gsa = GNSS_GSA()
         self.gll = GNSS_GLL()
+        self.gsv = []
 
 
 # Global variables
@@ -189,13 +188,13 @@ fuse = -3
 # res_rx = ""
 
 # Functions
-def summary(gpsd):
+def summary():
     os.system('clear')
-    print(str(gpsd.hour+fuse).zfill(2) + ":" + str(gpsd.min).zfill(2) + ":" + str(gpsd.sec).zfill(2))
-    print("latitude: " + "{0:.6f}".format(gpsd.latdeg_dec) + " " + str(gpsd.lat_index))
-    print("longitude: " + "{0:.6f}".format(gpsd.londeg_dec) + " " + str(gpsd.lon_index))
-    print("Altitude: " + str(gpsd.altitude))
-    print("N satt: " + str(gpsd.num_satt))
+    print(str(gpsd0.gga.hour+fuse).zfill(2) + ":" + str(gpsd0.gga.min).zfill(2) + ":" + str(gpsd0.gga.sec).zfill(2))
+    print("latitude: " + "{0:.6f}".format(gpsd0.gga.lat_dec) + " " + str(gpsd0.gga.lat_i))
+    print("longitude: " + "{0:.6f}".format(gpsd0.gga.lon_dec) + " " + str(gpsd0.gga.lon_i))
+    # print("Altitude: " + str(gpsd.altitude))
+    # print("N satt: " + str(gpsd.num_satt))
     print("GPS: ")
     print("BD : ")
     print("GL : ")
@@ -216,57 +215,78 @@ def run_serial():
 def read_file():
     file = open("gnss_data_02.txt", "r")
     ans0 = file.readline()
+def decode_cmd(array_byte):
+    # str_cmd = res_rx.decode("utf-8")
+    cmd_to_parse = array_byte.decode("utf-8")
+
+    # if len(str0) > 1:
+    #     print(str0[0])
+    #     # decode(str0[0])
+    #     # try:
+    #     str0.pop()
+    #     # finally:
+    #         # print("nothing")
+
+    # p1 = str_cmd.find("$")			# find the start point
+    # p2 = str_cmd.find("\r\n")			# find the end point
+    # cmd_to_parse = str_cmd[p1+1:p2]  	# reconstruct the string
+    # cmd_to_parse = str_cmd[p1+1:]  	# reconstruct the string
+    vec_temp = cmd_to_parse.split(',')	# split data in one array
+    # str_cmd = str_cmd[p2:]            # remove the first command line
+
+    cmd_main = vec_temp[0][1:]	        # get the main command removing $ character
+    cmd_satt = cmd_main[0:2]	        # get satt constelation
+    cmd_type = cmd_main[2:5]	        # get subcommand type
+
+    cmd = []
+    cmd.append(cmd_main)
+    cmd.append(cmd_satt)
+    cmd.append(cmd_type)
+    cmd.append(vec_temp)
+
+    return cmd
+
 def main0():
+    serial_connection_status = 0
     try:
         s = serial.Serial(serial_port, speed)
+        serial_connection_status = 1
         print("Serial port reading...")
+    except:
+        serial_connection_status = 0
 
+    if serial_connection_status == 1:
         while True:
-            res_rx = s.readline()
-            # str_cmd = res_rx.decode("utf-8")
-            cmd_to_parse = res_rx.decode("utf-8")
-
-            # if len(str0) > 1:
-            #     print(str0[0])
-            #     # decode(str0[0])
-            #     # try:
-            #     str0.pop()
-            #     # finally:
-            #         # print("nothing")
-
-            # p1 = str_cmd.find("$")			    # find the start point
-            # p2 = str_cmd.find("\r\n")			# find the end point
-            # cmd_to_parse = str_cmd[p1+1:p2]  	# reconstruct the string
-            # cmd_to_parse = str_cmd[p1+1:]  	# reconstruct the string
-            ans2 = cmd_to_parse.split(',')	   	# split data in one array
-            # str_cmd = str_cmd[p2:]            # remove the first command line
-
-            cmd = ans2[0][1:]	                # get the main command removing $ character
-            cmd_satt = cmd[0:2]	        	# get satt constelation
-            cmd_type = cmd[2:5]	        	# get subcommand type
-
+            cmd = decode_cmd(s.readline())
             # process it
-            match cmd_type:
+            match cmd[2]:
+                case "GGA":
+                    gpsd0.gga.decode(cmd[3])
                 case "GSA":	# GSA - GPS DOP and active satellites
-                    a = 0
+                    # print(cmd[3])
+                    sys_id = int(cmd[3][18][0])
+                    if sys_id <= 5:
+                        # print(sys_id)
+                        gpsd0.gsa[sys_id-1].decode(cmd[3])
+                    else:
+                        print("no system found")
                 
                 case "GSV":
-                    gpsd0.num_gsv = 0
+                    b = 0
 
                 case "ZDA":
-                    gpsd0.UTC_time = 0
+                    c = 0
 
                 case "VTG":
-                    try:
-                        gpsd0.speed_kmph = float(ans2[7])
-                    except:
-                        gpsd0.speed_kmph = 0
+                    d = 0
+
                 case "GLL":
-                    summary(gpsd0)
+                    summary()
+                    # gpsd0.gga.test()
                     # a=0
                     # print("nothing found")
-    except:
-        print("Can't stablished serial communication2")
+    else:
+        print("Can't stablished serial communication. Leaving...")
 
 # run_serial()
 main0()
